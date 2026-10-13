@@ -1,74 +1,297 @@
 <!DOCTYPE html>
-<html lang="ur" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#145638"><title>ایڈمن پینل — جامعہ خلفائے راشدین</title>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#145638">
+<title>ایڈمن پینل — جامعہ خلفائے راشدین</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f7f2;color:#183c2b;line-height:1.9}header{background:#145638;color:white;padding:20px;text-align:center}main{width:min(100% - 24px,760px);margin:18px auto}.card{background:#fff;padding:20px;margin:16px 0;border-radius:14px;box-shadow:0 3px 12px #0001}h2,h3{color:#167047;margin-top:0}label{display:block;font-weight:bold;margin-top:10px}input,textarea,select{width:100%;padding:11px;border:1px solid #cbd8cb;border-radius:8px;font:inherit;background:#fff}textarea{min-height:90px}button,.button{border:0;border-radius:8px;background:#167047;color:#fff;padding:10px 16px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block;margin:5px 0}button.danger{background:#9e2c2c}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}small,.muted{color:#617066}.hidden{display:none!important}.entry{background:#edf3eb;padding:12px;border-radius:10px;margin:10px 0;overflow-wrap:anywhere}.entry button{margin-left:6px}.status{padding:10px;background:#edf3eb;border-radius:8px;white-space:pre-wrap}.notice{font-size:13px;color:#795d21}
-</style></head><body><header><h1>ایڈمن پینل</h1><p>جامعہ خلفائے راشدین رضی اللہ عنہم</p></header><main>
-<section class="card" id="loginCard"><h2>محفوظ لاگ اِن</h2><p>صرف اجازت یافتہ ایڈمن اکاؤنٹ سے داخل ہوں۔</p><label for="email">ایڈمن ای میل</label><input id="email" type="email" autocomplete="username" required><label for="password">پاس ورڈ</label><input id="password" type="password" autocomplete="current-password" required><button id="loginBtn">لاگ اِن</button><p id="loginMsg" class="status" aria-live="polite"></p><p class="muted">ایڈمن اکاؤنٹ Firebase Console میں بنایا جاتا ہے؛ اس صفحے میں پاس ورڈ ہارڈ کوڈ نہ کریں۔</p></section>
-<section class="card hidden" id="dashboard"><div class="row" style="align-items:center"><h2 style="flex:2">انتظامی ڈیش بورڈ</h2><button id="logoutBtn">لاگ آؤٹ</button></div><p class="status" id="status" aria-live="polite">آپ لاگ اِن ہیں۔</p>
-<h3>گیلری میں تصویر شامل کریں</h3><form id="galleryForm"><label for="imageFile">تصویر منتخب کریں</label><input id="imageFile" type="file" accept="image/*" required><label for="caption">تصویر کا عنوان</label><input id="caption" maxlength="150" required><button type="submit">تصویر اپ لوڈ کریں</button></form><div id="galleryEntries"></div>
-<hr>
-<h3>استاد شامل کریں</h3><form id="teacherForm"><label for="teacherName">استاد کا نام</label><input id="teacherName" maxlength="150" required><label for="teacherDept">شعبہ</label><input id="teacherDept" maxlength="150" required><label for="teacherBio">مختصر تعارف</label><textarea id="teacherBio" maxlength="1000" required></textarea><button type="submit">استاد محفوظ کریں</button></form><div id="teacherEntries"></div>
-<hr>
-<h3>داخلے کی معلومات</h3><form id="admissionForm"><label for="admissionDesc">تفصیل</label><textarea id="admissionDesc" maxlength="3000" required></textarea><label for="admissionContact">رابطہ معلومات (اختیاری)</label><input id="admissionContact" maxlength="200"><label for="mapUrl">Google Maps کا درست لنک (اختیاری)</label><input id="mapUrl" type="url" placeholder="https://maps.google.com/..."><button type="submit">داخلے کی معلومات محفوظ کریں</button></form>
-<hr>
-<h3>طلبہ کے نتائج شامل کریں</h3><p class="notice">عوامی ویب سائٹ پر نتائج سب دیکھ سکتے ہیں۔ صرف وہ معلومات شائع کریں جنہیں شائع کرنے کی اجازت ہے؛ مکمل شناختی یا حساس معلومات نہ ڈالیں۔</p><form id="resultForm"><label for="rollNo">رول نمبر یا غیر شناختی کوڈ</label><input id="rollNo" maxlength="60" required><label for="className">جماعت / شعبہ</label><input id="className" maxlength="100" required><label for="resultText">نتیجہ</label><input id="resultText" maxlength="100" required><button type="submit">نتیجہ محفوظ کریں</button></form><div id="resultEntries"></div>
-<p><a class="button" href="index.html">ویب سائٹ دیکھیں</a></p></section>
+:root{--green:#145638;--green2:#176747;--bg:#f4f7f2;--ink:#183c2b;--border:#d5e0d7;--red:#a83232}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Nastaliq Urdu",sans-serif;background:var(--bg);color:var(--ink);line-height:1.9}
+header{background:var(--green);color:#fff;text-align:center;padding:20px 12px}
+header h1{font-size:clamp(1.35rem,4vw,2rem);margin:0}
+header p{margin:4px 0 0}
+main{width:min(850px,100%);margin:20px auto;padding:0 12px 28px}
+.panel{background:#fff;border:1px solid #e6ece7;border-radius:16px;padding:20px;margin:16px 0;box-shadow:0 4px 16px #0000000b}
+h2{color:var(--green2);margin:0 0 12px;font-size:1.25rem}
+label{display:block;font-weight:bold;margin-top:12px}
+input,textarea{display:block;width:100%;padding:12px;border:1px solid #b7c7bb;border-radius:8px;font:inherit;margin-top:5px;background:#fff;color:var(--ink)}
+input:focus,textarea:focus{outline:2px solid #8bbba0;outline-offset:1px}
+textarea{min-height:135px;direction:rtl}
+button,.button{display:inline-block;border:0;background:var(--green2);color:#fff;padding:10px 18px;border-radius:8px;font:inherit;cursor:pointer;margin:6px 2px;text-decoration:none;text-align:center}
+button:hover,.button:hover{background:#0d3f29}
+button:disabled{opacity:.65;cursor:wait}
+.secondary{background:#596b60}.danger{background:var(--red)}
+.hidden{display:none!important}
+.status{padding:11px 13px;border-radius:8px;background:#edf5ed;margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.hint{color:#56675c;font-size:14px;margin:6px 0}
+.preview{display:block;max-width:130px;max-height:130px;object-fit:cover;border-radius:8px;margin:8px 0}
+.toprow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.toprow h2{margin:0}
+footer{text-align:center;color:#66766b;font-size:13px;padding:12px}
+@media(max-width:480px){.panel{padding:15px}button,.button{max-width:100%}header{padding:17px 10px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>جامعہ خلفائے راشدین رضی اللہ عنہم</h1>
+  <p>ایڈمن پینل</p>
+</header>
+<main>
+  <div id="status" class="status" role="status" aria-live="polite">Supabase سے رابطہ کیا جا رہا ہے…</div>
+
+  <section id="loginPanel" class="panel">
+    <h2>ایڈمن لاگ اِن</h2>
+    <p class="hint">صرف مجاز ایڈمن اکاؤنٹ سے داخل ہوں۔ اس اکاؤنٹ کا صارف ID Supabase کے admin_users ٹیبل میں موجود ہونا چاہیے۔</p>
+    <form id="loginForm">
+      <label for="email">ای میل</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="password">پاس ورڈ</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button id="loginBtn" type="submit">لاگ اِن کریں</button>
+    </form>
+  </section>
+
+  <section id="editorPanel" class="panel hidden">
+    <div class="toprow">
+      <h2>ویب سائٹ کی معلومات</h2>
+      <button id="logoutBtn" class="secondary" type="button">لاگ آؤٹ</button>
+    </div>
+    <p class="hint">ہر فہرست میں ایک لائن پر ایک اندراج لکھیں۔ تبدیلیاں محفوظ کرنے کے لیے آخر میں “تمام تبدیلیاں محفوظ کریں” دبائیں۔</p>
+
+    <label for="teachers">اساتذہ — ہر لائن: استاد کا نام | مضمون</label>
+    <textarea id="teachers" placeholder="مولانا احمد | قرآن کریم&#10;مولانا محمود | حدیث شریف"></textarea>
+
+    <label for="admission">داخلے کی معلومات (ہر نئی سطر نئی لائن ہوگی)</label>
+    <textarea id="admission"></textarea>
+
+    <label for="results">طلبہ کے نتائج (ہر نئی سطر نئی لائن ہوگی)</label>
+    <textarea id="results"></textarea>
+
+    <h2>رابطہ</h2>
+    <label for="address">جامعہ کا پتہ</label>
+    <input id="address" type="text" placeholder="جامعہ کا مکمل پتہ">
+
+    <label for="phone">فون نمبر</label>
+    <input id="phone" type="tel" inputmode="tel" placeholder="جامعہ کا رابطہ نمبر">
+
+    <label for="map">Google Maps کا لنک (اختیاری)</label>
+    <input id="map" type="url" placeholder="https://maps.app.goo.gl/...">
+
+    <h2 style="margin-top:20px">گیلری کی تصاویر</h2>
+    <p class="hint">موبائل سے JPG، PNG یا WebP تصویر منتخب کریں (زیادہ سے زیادہ 5 MB) اور اپ لوڈ کریں۔ اپ لوڈ کے بعد کیپشن لکھیں، پھر تمام تبدیلیاں محفوظ کریں۔</p>
+    <label for="imageFile">تصویر منتخب کریں</label>
+    <input id="imageFile" type="file" accept="image/jpeg,image/png,image/webp">
+    <button id="uploadBtn" type="button">تصویر اپ لوڈ کریں</button>
+    <div id="galleryEditor"></div>
+    <button id="addUrlBtn" type="button" class="secondary">تصویر کے لنک سے اندراج شامل کریں</button>
+    <div><button id="saveBtn" type="button">تمام تبدیلیاں محفوظ کریں</button></div>
+  </section>
+
+  <p><a class="button secondary" href="./index.html">ویب سائٹ دیکھیں</a></p>
+  <footer>جامعہ خلفائے راشدین — ایڈمن پینل</footer>
 </main>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
-const ADMIN_UID = "PASTE_ADMIN_UID"; // Firebase Authentication میں اپنے ایڈمن صارف کا UID یہاں درج کریں
-const firebaseConfig = {
-  apiKey: "PASTE_FIREBASE_API_KEY",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_MESSAGING_SENDER_ID",
-  appId: "PASTE_APP_ID"
-};
+
+<script>
+"use strict";
+
+// یہ Supabase کی public/publishable key ہے۔ یہاں کبھی service_role/secret key نہ رکھیں۔
+const SUPABASE_URL = "https://kgcrmcaaurifrezsbufq.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_YuLbhX9IZGeoinDPY_TcKg_6xtoPtvx";
+
 const $ = id => document.getElementById(id);
-const ready = !Object.values(firebaseConfig).some(v => v.startsWith("PASTE_")) && !ADMIN_UID.startsWith("PASTE_");
-if (!ready) {
- $("loginMsg").textContent = "پہلے index.html اور admin.html دونوں میں Firebase کی اپنی config درج کریں، پھر یہ پینل استعمال کریں۔";
- $("loginBtn").disabled = true;
-} else {
- const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getFirestore(app), storage = getStorage(app);
- const say = (message) => $("status").textContent = message;
- const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
- $("loginBtn").addEventListener("click", async () => {
-  $("loginMsg").textContent = "لاگ اِن ہو رہا ہے…";
-  try { await signInWithEmailAndPassword(auth, $("email").value.trim(), $("password").value); $("loginMsg").textContent = ""; }
-  catch(e) { $("loginMsg").textContent = "لاگ اِن ناکام ہوا۔ ای میل/پاس ورڈ اور Firebase Authentication چیک کریں۔"; }
- });
- $("logoutBtn").addEventListener("click", () => signOut(auth));
- onAuthStateChanged(auth, async user => {
-  if (user && user.uid !== ADMIN_UID) {
-    await signOut(auth);
-    $("loginMsg").textContent = "یہ اکاؤنٹ ایڈمن کی اجازت یافتہ فہرست میں نہیں ہے۔";
-    $("loginCard").classList.remove("hidden");
-    $("dashboard").classList.add("hidden");
-    return;
-  }
-  $("loginCard").classList.toggle("hidden", !!user);
-  $("dashboard").classList.toggle("hidden", !user);
-  if(user) { say("ایڈمن کے طور پر لاگ اِن ہیں: " + user.email); await refreshAll(); }
- });
- async function refreshAll() {
-  await Promise.all([renderEntries("gallery","galleryEntries",x=>`<strong>${esc(x.caption)}</strong><br><a href="${esc(x.imageUrl)}" target="_blank" rel="noopener">تصویر دیکھیں</a>`, async x=>{await deleteDoc(doc(db,"gallery",x.id)); if(x.storagePath) await deleteObject(ref(storage,x.storagePath)).catch(()=>{});}),
-   renderEntries("teachers","teacherEntries",x=>`<strong>${esc(x.name)}</strong><br>${esc(x.department)}<br>${esc(x.bio)}`,x=>deleteDoc(doc(db,"teachers",x.id))),
-   renderEntries("results","resultEntries",x=>`<strong>${esc(x.rollNo)}</strong> — ${esc(x.className)} — ${esc(x.result)}`,x=>deleteDoc(doc(db,"results",x.id)))]);
-  const a=await getDoc(doc(db,"settings","admission")); if(a.exists()){ $("admissionDesc").value=a.data().description||""; $("admissionContact").value=a.data().contact||""; $("mapUrl").value=a.data().mapUrl||""; }
- }
- async function renderEntries(coll,container,format,remove) {
-  const snap=await getDocs(collection(db,coll));
-  $(container).innerHTML=snap.empty?"<p>ابھی کوئی ریکارڈ نہیں۔</p>":snap.docs.map(d=>`<div class="entry">${format({id:d.id,...d.data()})}<br><button class="danger" data-delete="${esc(d.id)}">حذف کریں</button></div>`).join("");
-  $(container).querySelectorAll("[data-delete]").forEach(b=>b.addEventListener("click",async()=>{if(confirm("کیا آپ واقعی یہ ریکارڈ حذف کرنا چاہتے ہیں؟")){try{const x=snap.docs.find(d=>d.id===b.dataset.delete);await remove({id:x.id,...x.data()});say("ریکارڈ حذف ہوگیا۔");await refreshAll()}catch(e){say("حذف نہیں ہو سکا؛ اجازت اور نیٹ ورک چیک کریں۔")}}}));
- }
- $("galleryForm").addEventListener("submit",async e=>{e.preventDefault();const file=$("imageFile").files[0];if(!file)return;if(file.size>5*1024*1024){say("براہ کرم 5 MB سے چھوٹی تصویر منتخب کریں۔");return}if(!file.type.startsWith("image/")){say("صرف تصویر منتخب کریں۔");return}try{say("تصویر اپ لوڈ ہو رہی ہے…");const path=`gallery/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;const r=ref(storage,path);await uploadBytes(r,file,{contentType:file.type});const imageUrl=await getDownloadURL(r);await addDoc(collection(db,"gallery"),{caption:$("caption").value.trim(),imageUrl,storagePath:path,createdAt:serverTimestamp()});e.target.reset();say("تصویر شامل ہوگئی۔");await refreshAll()}catch(err){say("تصویر اپ لوڈ نہ ہو سکی؛ Storage rules اور Firebase setup چیک کریں۔")}});
- $("teacherForm").addEventListener("submit",async e=>{e.preventDefault();try{await addDoc(collection(db,"teachers"),{name:$("teacherName").value.trim(),department:$("teacherDept").value.trim(),bio:$("teacherBio").value.trim(),createdAt:serverTimestamp()});e.target.reset();say("استاد کی معلومات محفوظ ہوگئیں۔");await refreshAll()}catch(err){say("محفوظ نہیں ہو سکا؛ Firestore rules چیک کریں۔")}});
- $("admissionForm").addEventListener("submit",async e=>{e.preventDefault();try{const mapUrl=$("mapUrl").value.trim();if(mapUrl && !/^https:\/\/(www\.)?(google\.com\/maps|maps\.google\.com)\//i.test(mapUrl)){say("براہ کرم Google Maps کا https لنک درج کریں۔");return}await setDoc(doc(db,"settings","admission"),{description:$("admissionDesc").value.trim(),contact:$("admissionContact").value.trim(),mapUrl,updatedAt:serverTimestamp()});say("داخلے کی معلومات محفوظ ہوگئیں۔")}catch(err){say("معلومات محفوظ نہیں ہوئیں؛ Firestore rules چیک کریں۔")}});
- $("resultForm").addEventListener("submit",async e=>{e.preventDefault();try{await addDoc(collection(db,"results"),{rollNo:$("rollNo").value.trim(),className:$("className").value.trim(),result:$("resultText").value.trim(),createdAt:serverTimestamp()});e.target.reset();say("نتیجہ محفوظ ہوگیا۔");await refreshAll()}catch(err){say("نتیجہ محفوظ نہیں ہوا؛ Firestore rules چیک کریں۔")}});
+let sb = null;
+let currentUser = null;
+let gallery = [];
+
+function setStatus(msg, bad = false) {
+  $("status").textContent = msg;
+  $("status").style.background = bad ? "#fdecec" : "#edf5ed";
+  $("status").style.color = bad ? "#8b1d1d" : "#183c2b";
 }
-</script></body></html>
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[c]));
+}
+function parseLines(id, twoFields = false) {
+  return $(id).value.split(/\r?\n/).map(x => x.trim()).filter(Boolean).map(line => {
+    if (!twoFields) return line;
+    const parts = line.split("|");
+    return {name:(parts[0] || "").trim(), subject:(parts.slice(1).join("|") || "").trim()};
+  });
+}
+async function checkAdmin(user) {
+  const {data, error} = await sb.from("admin_users").select("user_id").eq("user_id", user.id).maybeSingle();
+  if (error) throw new Error("ایڈمن اجازت چیک نہیں ہو سکی: " + error.message);
+  if (!data) throw new Error("یہ اکاؤنٹ ایڈمن نہیں ہے۔ پہلے Supabase کے admin_users ٹیبل میں اس صارف کا ID شامل کریں۔");
+}
+function renderGallery() {
+  $("galleryEditor").innerHTML = gallery.map((g, i) => `
+    <div class="panel">
+      <div class="toprow"><strong>تصویر ${i + 1}</strong><button type="button" class="danger" data-remove="${i}">حذف</button></div>
+      ${g.url ? `<img class="preview" src="${escapeHtml(g.url)}" alt="گیلری تصویر" loading="lazy" onerror="this.style.display='none'">` : ""}
+      <label for="gallery-url-${i}">تصویر کا لنک</label>
+      <input id="gallery-url-${i}" data-url="${i}" type="url" value="${escapeHtml(g.url)}" placeholder="https://...">
+      <label for="gallery-caption-${i}">کیپشن</label>
+      <input id="gallery-caption-${i}" data-caption="${i}" value="${escapeHtml(g.caption)}" placeholder="تصویر کا عنوان">
+    </div>`).join("");
+  $("galleryEditor").querySelectorAll("[data-remove]").forEach(b => b.addEventListener("click", () => {
+    gallery.splice(Number(b.dataset.remove), 1);
+    renderGallery();
+  }));
+  $("galleryEditor").querySelectorAll("[data-url]").forEach(inp => inp.addEventListener("input", () => {
+    gallery[Number(inp.dataset.url)].url = inp.value.trim();
+  }));
+  $("galleryEditor").querySelectorAll("[data-caption]").forEach(inp => inp.addEventListener("input", () => {
+    gallery[Number(inp.dataset.caption)].caption = inp.value;
+  }));
+}
+async function loadContent() {
+  const {data, error} = await sb.from("site_content").select("content").eq("id", "main").maybeSingle();
+  if (error) throw new Error("ویب سائٹ کا مواد نہیں پڑھا جا سکا: " + error.message + "۔ Supabase کی ٹیبل اور پالیسیاں چیک کریں۔");
+  const c = data?.content || {};
+  $("teachers").value = (c.teachers || []).map(t => `${t.name || ""} | ${t.subject || ""}`).join("\n");
+  $("admission").value = Array.isArray(c.admission) ? c.admission.join("\n") : (c.admission || "");
+  $("results").value = Array.isArray(c.results) ? c.results.join("\n") : (c.results || "");
+  $("address").value = c.contact?.address || "";
+  $("phone").value = c.contact?.phone || "";
+  $("map").value = c.contact?.map || "";
+  gallery = Array.isArray(c.gallery) ? c.gallery.map(g => ({url:g.url || "", caption:g.caption || ""})) : [];
+  renderGallery();
+}
+async function showEditor(user) {
+  await checkAdmin(user);
+  currentUser = user;
+  await loadContent();
+  $("loginPanel").classList.add("hidden");
+  $("editorPanel").classList.remove("hidden");
+  setStatus("ایڈمن لاگ اِن کامیاب ہے۔ اب معلومات تبدیل کر کے محفوظ کر سکتے ہیں۔");
+}
+$("loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = $("loginBtn");
+  btn.disabled = true;
+  setStatus("لاگ اِن ہو رہا ہے…");
+  try {
+    const {data, error} = await sb.auth.signInWithPassword({
+      email:$("email").value.trim(),
+      password:$("password").value
+    });
+    if (error) throw new Error(error.message);
+    await showEditor(data.user);
+  } catch (err) {
+    await sb.auth.signOut();
+    currentUser = null;
+    $("editorPanel").classList.add("hidden");
+    $("loginPanel").classList.remove("hidden");
+    setStatus("لاگ اِن نہیں ہو سکا: " + (err.message || "نامعلوم خرابی"), true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+$("logoutBtn").addEventListener("click", async () => {
+  const {error} = await sb.auth.signOut();
+  currentUser = null;
+  $("editorPanel").classList.add("hidden");
+  $("loginPanel").classList.remove("hidden");
+  setStatus(error ? "لاگ آؤٹ میں مسئلہ: " + error.message : "آپ لاگ آؤٹ ہو گئے ہیں۔", !!error);
+});
+$("addUrlBtn").addEventListener("click", () => {
+  gallery.push({url:"", caption:"نئی تصویر"});
+  renderGallery();
+});
+$("uploadBtn").addEventListener("click", async () => {
+  if (!currentUser) { setStatus("پہلے ایڈمن لاگ اِن کریں۔", true); return; }
+  const file = $("imageFile").files[0];
+  if (!file) { setStatus("پہلے تصویر منتخب کریں۔", true); return; }
+  if (file.size > 5 * 1024 * 1024) { setStatus("تصویر 5 MB سے چھوٹی ہونی چاہیے۔", true); return; }
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    setStatus("صرف JPG، PNG یا WebP تصویر اپ لوڈ کریں۔", true); return;
+  }
+  const btn = $("uploadBtn");
+  btn.disabled = true;
+  setStatus("تصویر اپ لوڈ ہو رہی ہے…");
+  try {
+    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const path = `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const {error} = await sb.storage.from("jamia-gallery").upload(path, file, {contentType:file.type, upsert:false});
+    if (error) throw new Error(error.message);
+    const {data} = sb.storage.from("jamia-gallery").getPublicUrl(path);
+    gallery.push({url:data.publicUrl, caption:file.name.replace(/\.[^.]+$/, "")});
+    $("imageFile").value = "";
+    renderGallery();
+    setStatus("تصویر اپ لوڈ ہو گئی۔ اب “تمام تبدیلیاں محفوظ کریں” بھی دبائیں۔");
+  } catch (err) {
+    setStatus("تصویر اپ لوڈ نہیں ہوئی: " + (err.message || "نامعلوم خرابی") + "۔ Storage bucket اور اس کی پالیسیاں چیک کریں۔", true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+$("saveBtn").addEventListener("click", async () => {
+  if (!currentUser) { setStatus("پہلے ایڈمن لاگ اِن کریں۔", true); return; }
+  const btn = $("saveBtn");
+  btn.disabled = true;
+  setStatus("تبدیلیاں محفوظ ہو رہی ہیں…");
+  try {
+    await checkAdmin(currentUser);
+    const mapValue = $("map").value.trim();
+    if (mapValue && !/^https:\/\/\S+$/i.test(mapValue)) throw new Error("Google Maps کا لنک https:// سے شروع ہونا چاہیے۔");
+    const cleanedGallery = gallery.map(g => ({
+      url:String(g.url || "").trim(),
+      caption:String(g.caption || "").trim()
+    })).filter(g => {
+      try {
+        const u = new URL(g.url, location.href);
+        return ["https:", "http:"].includes(u.protocol) || g.url.startsWith("./") || g.url.startsWith("../") || g.url.startsWith("/");
+      } catch (_) { return false; }
+    });
+    const content = {
+      teachers:parseLines("teachers", true).filter(t => t.name),
+      gallery:cleanedGallery,
+      admission:$("admission").value.trim(),
+      results:$("results").value.trim(),
+      contact:{
+        address:$("address").value.trim(),
+        phone:$("phone").value.trim(),
+        map:mapValue
+      }
+    };
+    const {error} = await sb.from("site_content").upsert(
+      {id:"main", content, updated_at:new Date().toISOString()},
+      {onConflict:"id"}
+    );
+    if (error) throw new Error(error.message);
+    gallery = cleanedGallery;
+    renderGallery();
+    setStatus("تمام تبدیلیاں کامیابی سے محفوظ ہو گئیں۔ اب ویب سائٹ کھول کر دیکھیں۔");
+  } catch (err) {
+    setStatus("محفوظ نہیں ہو سکا: " + (err.message || "نامعلوم خرابی"), true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+(async () => {
+  try {
+    if (!window.supabase) throw new Error("Supabase لائبریری لوڈ نہیں ہوئی۔ انٹرنیٹ کنکشن چیک کریں۔");
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    const {data, error} = await sb.auth.getSession();
+    if (error) throw error;
+    if (data.session?.user) {
+      try { await showEditor(data.session.user); }
+      catch (err) {
+        await sb.auth.signOut();
+        setStatus(err.message || "ایڈمن پینل لوڈ نہیں ہو سکا۔", true);
+      }
+    } else {
+      setStatus("ایڈمن لاگ اِن کے لیے ای میل اور پاس ورڈ درج کریں۔");
+    }
+  } catch (err) {
+    setStatus("رابطہ نہیں ہو سکا: " + (err.message || "نامعلوم خرابی"), true);
+  }
+})();
+</script>
+</body>
+</html>
