@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#145638"><title>ایڈمن پینل — جامعہ خلفائے راشدین</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f7f2;color:#183c2b;line-height:1.9}header{background:#145638;color:white;padding:20px;text-align:center}main{width:min(100% - 24px,760px);margin:18px auto}.card{background:#fff;padding:20px;margin:16px 0;border-radius:14px;box-shadow:0 3px 12px #0001}h2,h3{color:#167047;margin-top:0}label{display:block;font-weight:bold;margin-top:10px}input,textarea,select{width:100%;padding:11px;border:1px solid #cbd8cb;border-radius:8px;font:inherit;background:#fff}textarea{min-height:90px}button,.button{border:0;border-radius:8px;background:#167047;color:#fff;padding:10px 16px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block;margin:5px 0}button.danger{background:#9e2c2c}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}small,.muted{color:#617066}.hidden{display:none!important}.entry{background:#edf3eb;padding:12px;border-radius:10px;margin:10px 0;overflow-wrap:anywhere}.entry button{margin-left:6px}.status{padding:10px;background:#edf3eb;border-radius:8px;white-space:pre-wrap}.notice{font-size:13px;color:#795d21}
+</style></head><body><header><h1>ایڈمن پینل</h1><p>جامعہ خلفائے راشدین رضی اللہ عنہم</p></header><main>
+<section class="card" id="loginCard"><h2>محفوظ لاگ اِن</h2><p>صرف اجازت یافتہ ایڈمن اکاؤنٹ سے داخل ہوں۔</p><label for="email">ایڈمن ای میل</label><input id="email" type="email" autocomplete="username" required><label for="password">پاس ورڈ</label><input id="password" type="password" autocomplete="current-password" required><button id="loginBtn">لاگ اِن</button><p id="loginMsg" class="status" aria-live="polite"></p><p class="muted">ایڈمن اکاؤنٹ Firebase Console میں بنایا جاتا ہے؛ اس صفحے میں پاس ورڈ ہارڈ کوڈ نہ کریں۔</p></section>
+<section class="card hidden" id="dashboard"><div class="row" style="align-items:center"><h2 style="flex:2">انتظامی ڈیش بورڈ</h2><button id="logoutBtn">لاگ آؤٹ</button></div><p class="status" id="status" aria-live="polite">آپ لاگ اِن ہیں۔</p>
+<h3>گیلری میں تصویر شامل کریں</h3><form id="galleryForm"><label for="imageFile">تصویر منتخب کریں</label><input id="imageFile" type="file" accept="image/*" required><label for="caption">تصویر کا عنوان</label><input id="caption" maxlength="150" required><button type="submit">تصویر اپ لوڈ کریں</button></form><div id="galleryEntries"></div>
+<hr>
+<h3>استاد شامل کریں</h3><form id="teacherForm"><label for="teacherName">استاد کا نام</label><input id="teacherName" maxlength="150" required><label for="teacherDept">شعبہ</label><input id="teacherDept" maxlength="150" required><label for="teacherBio">مختصر تعارف</label><textarea id="teacherBio" maxlength="1000" required></textarea><button type="submit">استاد محفوظ کریں</button></form><div id="teacherEntries"></div>
+<hr>
+<h3>داخلے کی معلومات</h3><form id="admissionForm"><label for="admissionDesc">تفصیل</label><textarea id="admissionDesc" maxlength="3000" required></textarea><label for="admissionContact">رابطہ معلومات (اختیاری)</label><input id="admissionContact" maxlength="200"><label for="mapUrl">Google Maps کا درست لنک (اختیاری)</label><input id="mapUrl" type="url" placeholder="https://maps.google.com/..."><button type="submit">داخلے کی معلومات محفوظ کریں</button></form>
+<hr>
+<h3>طلبہ کے نتائج شامل کریں</h3><p class="notice">عوامی ویب سائٹ پر نتائج سب دیکھ سکتے ہیں۔ صرف وہ معلومات شائع کریں جنہیں شائع کرنے کی اجازت ہے؛ مکمل شناختی یا حساس معلومات نہ ڈالیں۔</p><form id="resultForm"><label for="rollNo">رول نمبر یا غیر شناختی کوڈ</label><input id="rollNo" maxlength="60" required><label for="className">جماعت / شعبہ</label><input id="className" maxlength="100" required><label for="resultText">نتیجہ</label><input id="resultText" maxlength="100" required><button type="submit">نتیجہ محفوظ کریں</button></form><div id="resultEntries"></div>
+<p><a class="button" href="index.html">ویب سائٹ دیکھیں</a></p></section>
+</main>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+const ADMIN_UID = "PASTE_ADMIN_UID"; // Firebase Authentication میں اپنے ایڈمن صارف کا UID یہاں درج کریں
+const firebaseConfig = {
+  apiKey: "PASTE_FIREBASE_API_KEY",
+  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
+  projectId: "PASTE_PROJECT_ID",
+  storageBucket: "PASTE_PROJECT_ID.appspot.com",
+  messagingSenderId: "PASTE_MESSAGING_SENDER_ID",
+  appId: "PASTE_APP_ID"
+};
+const $ = id => document.getElementById(id);
+const ready = !Object.values(firebaseConfig).some(v => v.startsWith("PASTE_")) && !ADMIN_UID.startsWith("PASTE_");
+if (!ready) {
+ $("loginMsg").textContent = "پہلے index.html اور admin.html دونوں میں Firebase کی اپنی config درج کریں، پھر یہ پینل استعمال کریں۔";
+ $("loginBtn").disabled = true;
+} else {
+ const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getFirestore(app), storage = getStorage(app);
+ const say = (message) => $("status").textContent = message;
+ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ $("loginBtn").addEventListener("click", async () => {
+  $("loginMsg").textContent = "لاگ اِن ہو رہا ہے…";
+  try { await signInWithEmailAndPassword(auth, $("email").value.trim(), $("password").value); $("loginMsg").textContent = ""; }
+  catch(e) { $("loginMsg").textContent = "لاگ اِن ناکام ہوا۔ ای میل/پاس ورڈ اور Firebase Authentication چیک کریں۔"; }
+ });
+ $("logoutBtn").addEventListener("click", () => signOut(auth));
+ onAuthStateChanged(auth, async user => {
+  if (user && user.uid !== ADMIN_UID) {
+    await signOut(auth);
+    $("loginMsg").textContent = "یہ اکاؤنٹ ایڈمن کی اجازت یافتہ فہرست میں نہیں ہے۔";
+    $("loginCard").classList.remove("hidden");
+    $("dashboard").classList.add("hidden");
+    return;
+  }
+  $("loginCard").classList.toggle("hidden", !!user);
+  $("dashboard").classList.toggle("hidden", !user);
+  if(user) { say("ایڈمن کے طور پر لاگ اِن ہیں: " + user.email); await refreshAll(); }
+ });
+ async function refreshAll() {
+  await Promise.all([renderEntries("gallery","galleryEntries",x=>`<strong>${esc(x.caption)}</strong><br><a href="${esc(x.imageUrl)}" target="_blank" rel="noopener">تصویر دیکھیں</a>`, async x=>{await deleteDoc(doc(db,"gallery",x.id)); if(x.storagePath) await deleteObject(ref(storage,x.storagePath)).catch(()=>{});}),
+   renderEntries("teachers","teacherEntries",x=>`<strong>${esc(x.name)}</strong><br>${esc(x.department)}<br>${esc(x.bio)}`,x=>deleteDoc(doc(db,"teachers",x.id))),
+   renderEntries("results","resultEntries",x=>`<strong>${esc(x.rollNo)}</strong> — ${esc(x.className)} — ${esc(x.result)}`,x=>deleteDoc(doc(db,"results",x.id)))]);
+  const a=await getDoc(doc(db,"settings","admission")); if(a.exists()){ $("admissionDesc").value=a.data().description||""; $("admissionContact").value=a.data().contact||""; $("mapUrl").value=a.data().mapUrl||""; }
+ }
+ async function renderEntries(coll,container,format,remove) {
+  const snap=await getDocs(collection(db,coll));
+  $(container).innerHTML=snap.empty?"<p>ابھی کوئی ریکارڈ نہیں۔</p>":snap.docs.map(d=>`<div class="entry">${format({id:d.id,...d.data()})}<br><button class="danger" data-delete="${esc(d.id)}">حذف کریں</button></div>`).join("");
+  $(container).querySelectorAll("[data-delete]").forEach(b=>b.addEventListener("click",async()=>{if(confirm("کیا آپ واقعی یہ ریکارڈ حذف کرنا چاہتے ہیں؟")){try{const x=snap.docs.find(d=>d.id===b.dataset.delete);await remove({id:x.id,...x.data()});say("ریکارڈ حذف ہوگیا۔");await refreshAll()}catch(e){say("حذف نہیں ہو سکا؛ اجازت اور نیٹ ورک چیک کریں۔")}}}));
+ }
+ $("galleryForm").addEventListener("submit",async e=>{e.preventDefault();const file=$("imageFile").files[0];if(!file)return;if(file.size>5*1024*1024){say("براہ کرم 5 MB سے چھوٹی تصویر منتخب کریں۔");return}if(!file.type.startsWith("image/")){say("صرف تصویر منتخب کریں۔");return}try{say("تصویر اپ لوڈ ہو رہی ہے…");const path=`gallery/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;const r=ref(storage,path);await uploadBytes(r,file,{contentType:file.type});const imageUrl=await getDownloadURL(r);await addDoc(collection(db,"gallery"),{caption:$("caption").value.trim(),imageUrl,storagePath:path,createdAt:serverTimestamp()});e.target.reset();say("تصویر شامل ہوگئی۔");await refreshAll()}catch(err){say("تصویر اپ لوڈ نہ ہو سکی؛ Storage rules اور Firebase setup چیک کریں۔")}});
+ $("teacherForm").addEventListener("submit",async e=>{e.preventDefault();try{await addDoc(collection(db,"teachers"),{name:$("teacherName").value.trim(),department:$("teacherDept").value.trim(),bio:$("teacherBio").value.trim(),createdAt:serverTimestamp()});e.target.reset();say("استاد کی معلومات محفوظ ہوگئیں۔");await refreshAll()}catch(err){say("محفوظ نہیں ہو سکا؛ Firestore rules چیک کریں۔")}});
+ $("admissionForm").addEventListener("submit",async e=>{e.preventDefault();try{const mapUrl=$("mapUrl").value.trim();if(mapUrl && !/^https:\/\/(www\.)?(google\.com\/maps|maps\.google\.com)\//i.test(mapUrl)){say("براہ کرم Google Maps کا https لنک درج کریں۔");return}await setDoc(doc(db,"settings","admission"),{description:$("admissionDesc").value.trim(),contact:$("admissionContact").value.trim(),mapUrl,updatedAt:serverTimestamp()});say("داخلے کی معلومات محفوظ ہوگئیں۔")}catch(err){say("معلومات محفوظ نہیں ہوئیں؛ Firestore rules چیک کریں۔")}});
+ $("resultForm").addEventListener("submit",async e=>{e.preventDefault();try{await addDoc(collection(db,"results"),{rollNo:$("rollNo").value.trim(),className:$("className").value.trim(),result:$("resultText").value.trim(),createdAt:serverTimestamp()});e.target.reset();say("نتیجہ محفوظ ہوگیا۔");await refreshAll()}catch(err){say("نتیجہ محفوظ نہیں ہوا؛ Firestore rules چیک کریں۔")}});
+}
+</script></body></html>
