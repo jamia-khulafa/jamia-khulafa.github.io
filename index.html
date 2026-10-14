@@ -180,7 +180,8 @@ async function loadSiteContent(){
   try {
     const {data,error}=await sb.from("site_content").select("content").eq("id","main").maybeSingle();
     if(error || !data || !data.content) return;
-    const c=data.content;
+    let c=data.content;
+if(typeof c==="string"){c=JSON.parse(c);}
     if(Array.isArray(c.teachers)){
       document.getElementById("teacherItems").innerHTML=c.teachers.map(t=>`<div class="item teacher-card"><div class="icon-box">✧</div><h3>${esc(t.name)}</h3><p>مضمون: ${esc(t.subject)}</p></div>`).join("");
     }
